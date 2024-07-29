@@ -1,0 +1,424 @@
+
+PostgreSql使用注意事项
+
+//npgsql创建主键序列
+1、CREATE SEQUENCE upms_log_id_seq START 1;
+2、nextval('archives_recordchart_pk_id_seq'::regclass)
+
+//npgsql添加支持uuid
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp"
+
+//查询数据库的序列列表
+SELECT c.relname FROM pg_class c WHERE c.relkind = 'S';
+
+//生成删除序列的sql语句
+SELECT 'DROP SEQUENCE "'||c.relname||'";' FROM pg_class c WHERE c.relkind ='S'
+ORDER BY c.relname
+
+//删除一个序列
+DROP SEQUENCE "lantian_game_detail_statistics_id_seq";
+
+//更改序列名称（从"lantian_game_member_id_seq1"改为"lantian_game_member_id_seq"）
+UPDATE pg_class SET relname = substr(relname,0,char_length(relname)) WHERE relname like '%seq_'
+
+
+清空表内容
+truncate table "archives_recordChart";
+alter sequence archives_recordchart_pk_id_seq start 1;
+
+重置自增id的sequence
+ALTER SEQUENCE seq RESTART WITH 1;
+或
+SELECT setval('sequence_name', 0);
+
+
+统一修改为同一个年月日
+UPDATE "lan_tian_electricity_meter_run_statement"
+SET create_time = DATE '2024-05-10'
+
+随机修改日期字段的小时
+UPDATE lan_tian_electricity_meter_run_statement
+SET create_time = date_trunc('day', create_time) + 
+                       (interval '1 hour' * random() * 23);
+随机修改日期字段的day
+UPDATE "lan_tian_switch_run_statement"
+SET create_time = create_time + (RANDOM() * 30 + 1)::int * INTERVAL '1 day'
+
+
+cmd 
+1、nginx.exe -s reload  ;start nginx
+2、netstat -ano   //查询端口号占用情况
+linux命令：
+1、chmod a+x 工程名称 // 给项目添加权限
+2、TZ=Asia/Shanghai //涉及到时区问题，在启动服务的前面加上该代码
+3、后台启动： nohup ./工程名称 &
+4、看进程 ps -ef | grep 工程名称
+5、杀进程 sudo kill 进程号
+6、重新加载nginx配置文件： service nginx restart
+7、启动mysql: systemctl start mysql.service
+8、需要修改时间为24小时，可以修改/etc/default/locale，默认没有LC_TIME这个变量，在文件中增加一行：LC_TIME=en_DK.UTF-8
+9、ubuntu重启命令是：reboot
+10、nohup java -jar test.jar >log.txt &  后台启动java并写log到txt文件
+11、halt 立即关机
+12、 memcached -p 11211 -u dell -m 64m -vv    memcached启动
+13、pgsql相关命令行
+# 查看状态
+sudo /etc/init.d/postgresql status
+
+# 启动
+sudo /etc/init.d/postgresql start
+
+# 停止
+sudo /etc/init.d/postgresql stop
+
+# 重启
+sudo /etc/init.d/postgresql restart
+
+
+host    all             all             127.0.0.1/32            md5
+
+反向工程
+Oracle
+Scaffold-DbContext "User Id=TRFF_APP;Password=Sdyy6689698;Data Source=192.168.8.38:1521/ORCL" Oracle.EntityFrameworkCore -OutputDir DbService -Tables("TRFF_APP.VEHICLE","TRFF_APP.VEH_SCHOOLBUS_PERMIT") -Force -UseDatabaseNames
+
+mysql
+Scaffold-DbContext "server=localhost;port=3306;user id=root;password=root;database=garbageclass;" Pomelo.EntityFrameworkCore.MySql -OutputDir DbService -Tables "lantian_electronicfence" -Context TestDb
+
+Scaffold-DbContext "server=192.168.1.105;user id=root;password=123456;persistsecurityinfo=True;database=garbageclass;" Pomelo.EntityFrameworkCore.MySql -OutputDir DbService  -Tables "lantian_electronicfence" -Context TestDb
+
+EFCore 排序取第一条
+var set = _db.VEH_SCHOOLBUS_PERMITs.AsNoTracking();
+var sorted = set.OrderByDescending(x => x.GXRQ);
+var lastData= set.Select(x => x.XH)
+	.Distinct()
+	.SelectMany(x => sorted.Where(y => y.XH == x).Take(1));
+	
+lambda去重
+res.Where((x, i) => res.FindLastIndex(z => z.SFZMHM == x.SFZMHM) == i).ToList();
+
+线程安全
+private static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+
+jwt hash生成
+
+  [HttpPost]
+        [AllowAnonymous]
+        public async Task<ActionResult> Login([FromBody] AddEditUserModel info)
+        {
+            _nlog.Info($"User login: {info.UserName}");
+            try
+            {
+                var user = await _db.Users.FirstOrDefaultAsync(x => x.UserName == info.UserName);
+                if (user == null)
+                {
+                    return Ok(new { status = "InvalidUsername" });
+                }
+                if (user.Password != info.Password)
+                {
+                    _nlog.Info($"Invalid password: {info.Password}");
+                    return Ok(new { status = "InvalidPassword" });
+                }
+                if (!user.IsEnable)
+                {
+                    _nlog.Info($"noRole: {info.RoleId}");
+                    return Ok(new { status = "noRole" });
+                }
+                var role = await _db.Roles.SingleOrDefaultAsync(x => x.Id == user.RoleId);
+                string permsStr = string.Join(',', role.Permissions);
+                var token = new JwtSecurityTokenHandler().CreateToken(new SecurityTokenDescriptor
+                {
+                    Audience = _jwtParam.ValidAudience,
+                    Issuer = _jwtParam.ValidIssuer,
+                    SigningCredentials = new SigningCredentials(
+                      new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtParam.ValidIssuerSigningKey)),
+                      SecurityAlgorithms.HmacSha256),
+                    Subject = new ClaimsIdentity(new[]
+                  {
+                    new Claim(ClaimTypes.Name, info.UserName),
+                    new Claim("Name", user.Name),
+                    new Claim("RoleId", user.RoleId.ToString()),
+                    new Claim("DepartId", user.DepartId.ToString()),
+                    new Claim("UserName", user.UserName),
+                    new Claim("Id", user.Id.ToString()),
+                    new Claim("Permissions",permsStr)
+                })
+
+                });
+                return Ok(new
+                {
+                    status = "Ok",
+                    id = user.Id,
+                    userName = user.UserName,
+                    name = user.Name,
+                    phoneNum = user.PhoneNum,
+                    departId = user.DepartId,
+                    roleId = user.RoleId,
+                    isLeader = user.IsLeader,
+                    isEnable = user.IsEnable,
+                    token = new JwtSecurityTokenHandler().WriteToken(token),
+                }); ;
+            }
+            catch (Exception ex)
+            {
+                return Ok(new
+                {
+                    status = "error",
+                    errorMsg = ex
+                });
+            }
+        }
+		
+mysql 增量备份:
+查看log_bin功能是否打开状态：
+show variables like '%log_bin%';		
+查看当前的备份日志文件：
+show master status;	
+查询日志文件的节点：
+show binlog events in 'mysql-bin.000005';
+（windows cmd运行）：
+恢复到某个节点之前的命令(mysql的data目录下执行)：
+mysqlbinlog --no-defaults mysql-bin.000005 --stop-position 8697 | mysql -uroot -proot	
+恢复两个节点之间的命令生成sql文件(mysql的data目录下执行)：:
+mysqlbinlog --no-defaults mysql-bin.000005 --start-position=120 --stop-position=1151 > d:\\zengliang.sql
+恢复语法格式：
+mysqlbinlog mysql-bin.0000xx | mysql -u用户名 -p密码数据库名
+
+         常用选项参数：
+
+         --start-position=953                  起始pos点
+
+         --stop-position=1437                  结束pos点
+
+         --start-datetime="2013-11-29 13:18:54"起始时间点
+
+         --stop-datetime="2013-11-29 13:21:53"  结束时间点
+
+         --database=zyyshop                    指定只恢复zyyshop数据库(一台主机上往往有多个数据库，只限本地log日志)
+
+列转行sql语句：
+select t.she_qu_id,t.she_qu_name,
+                    max(t.budget) as '预算',
+                    sum(case t.catelog_name when 't1' then t.total_actual_price else 0 end) as 't1',
+                    sum(case t.catelog_name when 't3' then t.total_actual_price else 0 end) as 't3',
+                    sum(case t.catelog_name when '生活用品' then t.total_actual_price else 0 end) as '生活用品',
+                    sum(case t.catelog_name when '办公用品' then t.total_actual_price else 0 end) as '办公用品'
+                    from lantian_account_balance t
+                    GROUP BY t.she_qu_id,t.she_qu_name
+					
+根据B表外键连A表同步B表相关字段：
+UPDATE lantian_car_receive B
+SET B.longitude = (
+    SELECT longitude
+    FROM lantian_dustbins A
+    WHERE A.id = B.receive_id
+),
+B.latitude = (
+    SELECT latitude
+    FROM lantian_dustbins A
+    WHERE A.id = B.receive_id
+)
+WHERE EXISTS (
+    SELECT 1
+    FROM lantian_dustbins A
+    WHERE A.id = B.receive_id
+);
+
+
+
+
+
+C#-Codefirst 相关命令
+Add-Migration -Context LanTianNpgSqlContext 版本名称
+Update-Database -Context LanTianNpgSqlContext //默认执行最新的脚本
+update-Database -Context LanTianNpgSqlContext 版本名称 可以将数据库更新到任何一个指定迁移时的架构。
+Remove-Migration -Context LanTianNpgSqlContext//默认删除 最后一次迁移，已迁移到数据库的，无法删除，只有数据库回退到要删除的上一个版本，才能执行本命令。
+
+
+
+
+
+
+
+
+Quartz.net的Cron 表达式范例：
+每隔5秒执行一次：*/5 * * * * ?
+每隔1分钟执行一次：0 */1 * * * ?
+每天23点执行一次：0 0 23 * * ?
+每天凌晨1点执行一次：0 0 1 * * ?
+每月1号凌晨1点执行一次：0 0 1 1 * ?
+每月最后一天23点执行一次：0 0 23 L * ?
+每周星期天凌晨1点实行一次：0 0 1 ? * L
+在26分、29分、33分执行一次：0 26,29,33 * * * ?
+每天的0点、13点、18点、21点都执行一次：0 0 0,13,18,21 * * ?
+
+ffmpeg 的命令
+查看视频或音频设备名称
+ffmpeg -list_devices true -f dshow -i dummy 
+
+启动usb摄像头推送rtsp流
+ffmpeg -f dshow -i video="@device_pnp_\\?\usb#vid_0bda&pid_9143&mi_00#6&20efe7f1&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global" -vcodec libx264 -preset:v ultrafast -tune:v zerolatency -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:8554/video1
+
+启动usb摄像头推送给指定服务器rtsp流
+ffmpeg -f dshow -i video="@device_pnp_\\?\usb#vid_0bda&pid_9143&mi_00#6&20efe7f1&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global" -vcodec libx264 -preset:v ultrafast -tune:v zerolatency -f rtsp rtsp://192.168.1.110:8554/video1
+
+将本地文件转成rtsp流并推送（无限反复推）
+ffmpeg -re -stream_loop -1 -i E:/Videos/hk1/output/hk1_217.ts -c copy -f flv rtmp://127.0.0.1:1935/live/hk1_217
+
+将本地文件转成rtsp流并推送（推一次）
+ffmpeg -re -i E:/Videos/hk1/output/hk1_217.ts -c copy -f flv rtmp://127.0.0.1:1935/live/hk1_217
+
+
+ip摄像头rtsp转rtmp推流
+ffmpeg -re -rtsp_transport tcp -i rtsp://admin:123456789lthj@192.168.1.64:554/h265/ch1/main/av_stream?transportmode=unicast -f flv -vcodec h264 -vprofile baseline -acodec aac -ar 44100 -strict -2 -ac 1 -f flv -s 640*360 -q 10 rtmp://127.0.0.1:1935/live/room
+
+按时间段截取视频生成新的视频文件
+ffmpeg -i E:\Videos\hk1\2023\8\16\9.ts -ss 00:30:00 -to 00:40:00 -c:v copy -c:a copy E:/Videos/output-cut1.avi
+
+合并两个视频
+ffmpeg -i concat:"E:\Videos\hk1\2023\8\15\output1.ts|E:\Videos\hk1\2023\8\15\output1.ts" -c copy E:\Videos\hk1\2023\8\15\output3.ts
+
+
+nssm创建服务命令：
+nssm install+服务名称
+
+
+
+
+Anaconda命令：
+创建Anaconda容器：
+conda create -n pytorch python=3.6
+
+切换到名字为‘pytorch’的容器（如果不成功则先执行set PYTHONIOENCODING=utf-8，然后再执行命令）
+conda activate pytorch
+
+安装pytorch（集显）
+conda install pytorch torchvision cpuonly -c pytorch
+
+3、安装pytorch（GPU）
+conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
+
+4、安装pytorch1.7.1（GPU）
+CUDA 9.2
+conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cudatoolkit=9.2 -c pytorch
+CUDA 10.1
+conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cudatoolkit=10.1 -c pytorch
+CUDA 10.2
+conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cudatoolkit=10.2 -c pytorch
+CUDA 11.0
+conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cudatoolkit=11.0 -c pytorch
+CPU Only
+conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cpuonly -c pytorch
+
+查看容器中的组件
+pip list
+
+验证是否安装成功
+1、python
+2、import torch
+
+验证pytorch是否可以用gpu（true是可以）
+torch.cuda.is_available()
+
+opencv安装：
+pip install opencv-python==4.3.0.38
+
+从txt安装环境
+pip install -r requirements.txt
+
+运行resources.py图形标注
+yrcc5 -o resources.py resources.qrc 
+python roLabelImg.py
+
+
+xml->txt 转换yolov5数据格式工具使用步骤
+1、将图片和xml放入对应文件夹
+2、运行get_list
+3、运行xml_to_txt
+
+
+
+开启监听IP，Port的监听权限
+1、netsh http add urlacl url=http://192.168.1.108:2020/  user=Everyone
+2、netsh advfirewall firewall Add rule name=\"命令行Web访问2020\" dir=in protocol=tcp localport=2020 action=allow
+
+linux启动中继服务命令 
+turnserver -L 0.0.0.0 -a -u admin:123456 -v -f -r nort.gov
+turnserver -a -f -r nort.gov
+
+
+------------------------------------------------------------- 前端相关
+vscode vue根据remind安装组件的批处理
+npm i
+
+vscode vue 启动
+node.js 命令
+1、npm run serve   //启动项目
+2、vue create 项目名称   //创建vue脚手架
+3、npm run build //打包
+4、npm i //根据package.josn下载安装组件
+5、vue inspect > output.js 将隐藏配置生成output.js展示（只是输出展示，不能修改）
+6、npm config set registry https://registry.npmmirror.com （淘宝镜像） https://registry.npmjs.org/（官方镜像） ，https://npm.aliyun.com/（阿里镜像） 切换镜像
+7、npm init -y 初始化项目，在项目目录生成package.json文件
+
+再浏览器单步调试
+vue.config.js中添加以下配置（打包时注释掉）
+ configureWebpack: {
+    // 配置 source-map 以便在开发过程中进行调试
+    devtool: 'source-map'
+  }
+------------------------------------------------------------------------
+git常用命令
+git branch 查看本地所有分支
+git status 查看当前状态 
+git commit 提交 
+git branch -a 查看所有的分支
+git branch -r 查看本地所有分支
+git commit -am "init" 提交并且加注释 
+git remote add origin git@192.168.1.119:ndshow
+git push origin master 将文件给推到服务器上 
+git remote show origin 显示远程库origin里的资源 
+git push origin master:develop
+git push origin master:hb-dev 将本地库与服务器上的库进行关联 
+git checkout --track origin/dev 切换到远程dev分支
+git branch -D master develop 删除本地库develop
+git checkout -b dev 建立一个新的本地分支dev
+git merge origin/dev 将分支dev与当前分支进行合并
+git checkout dev 切换到本地dev分支
+git remote show 查看远程库
+git add .
+git rm 文件名(包括路径) 从git中删除指定文件
+git clone git://github.com/schacon/grit.git 从服务器上将代码给拉下来
+git config --list 看所有用户
+git ls-files 看已经被提交的
+git rm [file name] 删除一个文件
+git commit -a 提交当前repos的所有的改变
+git add [file name] 添加一个文件到git index
+git commit -v 当你用－v参数的时候可以看commit的差异
+git commit -m "This is the message describing the commit" 添加commit信息
+git commit -a -a是代表add，把所有的change加到git index里然后再commit
+git commit -a -v 一般提交命令
+git log 看你commit的日志
+git diff 查看尚未暂存的更新
+git rm a.a 移除文件(从暂存区和工作区中删除)
+git rm --cached a.a 移除文件(只从暂存区中删除)
+git commit -m "remove" 移除文件(从Git中删除)
+git rm -f a.a 强行移除修改后文件(从暂存区和工作区中删除)
+git diff --cached 或 $ git diff --staged 查看尚未提交的更新
+git stash push 将文件给push到一个临时空间中
+git stash pop 将文件从临时空间pop下来
+---------------------------------------------------------
+git remote add origin git@github.com:username/Hello-World.git
+git push origin master 将本地项目给提交到服务器中
+-----------------------------------------------------------
+ git pull 本地与服务器端同步
+-----------------------------------------------------------------
+git push (远程仓库名) (分支名) 将本地分支推送到服务器上去。
+git push origin serverfix:awesomebranch
+------------------------------------------------------------------
+git fetch 相当于是从远程获取最新版本到本地，不会自动merge
+git commit -a -m "log_message" (-a是提交所有改动，-m是加入log信息) 本地修改同步至服务器端 ：
+git branch branch_0.1 master 从主分支master创建branch_0.1分支
+git branch -m branch_0.1 branch_1.0 将branch_0.1重命名为branch_1.0
+git checkout branch_1.0/master 切换到branch_1.0/master分支
+du -hs
+-------------------------------------------------------------------
