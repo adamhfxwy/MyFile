@@ -44,6 +44,17 @@ SET create_time = date_trunc('day', create_time) +
 UPDATE "lan_tian_switch_run_statement"
 SET create_time = create_time + (RANDOM() * 30 + 1)::int * INTERVAL '1 day'
 
+随机修改日期字段的month(本年度当前月份之前的月)
+UPDATE `lan_tian_switch_run_statement`
+SET create_time = (
+    MAKEDATE(YEAR(CURDATE()), 1) +
+    INTERVAL FLOOR(RAND() * (MONTH(CURDATE()) - 1)) MONTH +
+    INTERVAL FLOOR(RAND() * DAY(LAST_DAY(CURDATE() - INTERVAL FLOOR(RAND() * (MONTH(CURDATE()) - 1)) MONTH))) DAY
+)
+WHERE YEAR(create_time) = YEAR(CURDATE());
+
+
+
 
 cmd 
 1、nginx.exe -s reload  ;start nginx
@@ -222,6 +233,80 @@ WHERE EXISTS (
     FROM lantian_dustbins A
     WHERE A.id = B.receive_id
 );
+
+
+随机生成100条数据
+DELIMITER //
+
+CREATE PROCEDURE GenerateData()
+BEGIN
+    DECLARE i INT DEFAULT 1;
+    DECLARE category_id INT;
+    DECLARE category_name VARCHAR(50);
+    DECLARE service_cost DECIMAL(10, 2);
+    DECLARE remark VARCHAR(255);
+    DECLARE recovery_employee_id INT;
+    DECLARE recovery_employee_name VARCHAR(50);
+    DECLARE unit VARCHAR(50);
+    DECLARE create_time DATETIME;
+
+    WHILE i <= 100 DO
+        -- 随机选择 category_id 和 category_name
+        CASE FLOOR(1 + (RAND() * 3))
+            WHEN 1 THEN
+                SET category_id = 2;
+                SET category_name = '电视';
+            WHEN 2 THEN
+                SET category_id = 3;
+                SET category_name = '沙发';
+            WHEN 3 THEN
+                SET category_id = 4;
+                SET category_name = '床';
+        END CASE;
+
+        -- 固定 recovery_employee_id 和 recovery_employee_name
+        SET recovery_employee_id = 18;
+        SET recovery_employee_name = '回收员1';
+
+        -- 生成其他字段的随机数据
+        SET service_cost = ROUND(RAND() * 1000, 2);
+        SET remark = CONCAT('Remark ', i);
+        SET unit = CONCAT('Unit ', FLOOR(1 + (RAND() * 10)));
+        SET create_time = NOW();
+
+        -- 插入数据
+        INSERT INTO example_table (
+            category_id,
+            category_name,
+            service_cost,
+            remark,
+            recovery_employee_id,
+            recovery_employee_name,
+            unit,
+            create_time
+        ) VALUES (
+            category_id,
+            category_name,
+            service_cost,
+            remark,
+            recovery_employee_id,
+            recovery_employee_name,
+            unit,
+            create_time
+        );
+
+        -- 增加计数器
+        SET i = i + 1;
+    END WHILE;
+END //
+
+DELIMITER ;
+
+-- 调用存储过程生成数据
+CALL GenerateData();
+-------------------------------------------------------------------------
+
+
 
 
 
