@@ -1,0 +1,19 @@
+D .
+D comp
+R 32D574CA backGroundMusic1.mp3
+R 003CA5F1 backGroundMusic2.mp3
+P 5D5FCA57 BirdHero.png
+P E1CC64FA BirdHero_01.png
+P EABA4810 BirdHero_02.png
+P 49FF16BF BirdHero_03.png
+R 310328F1 black.png
+P 88BF7C9C btn_restart.png
+P 96015AC9 btn_start.png
+P 60053BEA clip_number.png
+R F9A9C5D8 ColumnSprite.png
+R 3DD56C78 death.mp3
+R 33DE20AA GrassThinSprite.png
+R 5909886D SkyTileSprite.png
+R 95B92C73 下坠的小鸟（flappy bird）-像素鸟PC版-提示音_爱给网_aigei_com.mp3
+R 3EBAB0C9 下坠的小鸟（flappy bird）-像素鸟PC版-碰撞音_爱给网_aigei_com.mp3
+R F6CD9116 下坠的小鸟（flappy bird）-像素鸟PC版-飞_爱给网_aigei_com.mp3
