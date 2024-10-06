@@ -1,0 +1,25 @@
+Sub UpdateDateInMergedCells()
+    Dim ws As Worksheet
+    Dim cell As Range
+    Dim mergedArea As Range
+    Dim currentDate As String
+    
+    ' 设置当前日期，格式为 yyyy-MM-dd
+    currentDate = Format(Date, "yyyy.mm.dd")
+    
+    ' 指定工作表名称
+    Set ws = ThisWorkbook.Sheets("何法萱") ' 替换为你的工作表名称
+    
+    ' 遍历工作表中的所有合并单元格
+    For Each cell In ws.UsedRange
+        ' 检查当前单元格是否属于合并区域
+        If cell.MergeCells Then
+            Set mergedArea = cell.MergeArea
+            ' 判断合并单元格的内容是否包含“填表日期”
+            If InStr(1, mergedArea.Cells(1, 1).Value, "填表日期", vbTextCompare) > 0 Then
+                ' 更新合并单元格中的日期为当前日期
+                mergedArea.Cells(1, 1).Value = "汇报人：何法萱         岗位：后端开发         填表日期：" & currentDate
+            End If
+        End If
+    Next cell
+End Sub

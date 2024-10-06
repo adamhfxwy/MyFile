@@ -109,7 +109,7 @@ var GameView = /** @class */ (function (_super) {
             var column = _a[_i];
             if (this.birdState.checkCollision(column)) {
                 // 如果检测到碰撞，触发游戏结束   
-                //this.birdState.isGameOver = true;          
+                this.birdState.isGameOver = true;
                 break;
             }
             // 检测通过
@@ -128,7 +128,7 @@ var GameView = /** @class */ (function (_super) {
                     var maxInterval = 500; // 最大间隔
                     // 根据速度计算缩小的间隔值
                     var intervalReduction = Math.min(100, this.speed * 2); // 根据速度减少间隔
-                    if (this.speed >= 10) {
+                    if (this.speed >= 13) {
                         // 更新最大和最小间隔值
                         this.max = Math.max(minInterval + intervalReduction, maxInterval - intervalReduction);
                         this.min = Math.max(minInterval, minInterval + intervalReduction / 2); // 确保最小间隔不小于 minInterval

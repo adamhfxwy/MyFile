@@ -1,3 +1,2 @@
-2024/09/19-17:46:40.592 9384 Reusing MANIFEST e:\TestCodes\LayaTest\FlappyBirdTest1\.laya\chrome\Default\Session Storage/MANIFEST-000001
-2024/09/19-17:46:40.592 9384 Recovering log #3
-2024/09/19-17:46:40.593 9384 Reusing old log e:\TestCodes\LayaTest\FlappyBirdTest1\.laya\chrome\Default\Session Storage/000003.log 
+2024/09/19-22:14:30.864 3f04 Creating DB d:\adamfiles\MyFile\FlappyBirdTest1\.laya\chrome\Default\Session Storage since it was missing.
+2024/09/19-22:14:30.870 3f04 Reusing MANIFEST d:\adamfiles\MyFile\FlappyBirdTest1\.laya\chrome\Default\Session Storage/MANIFEST-000001

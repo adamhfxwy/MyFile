@@ -99,7 +99,7 @@ class GameView extends ui.gameUI{
         for (const column of this.columns) {
             if (this.birdState.checkCollision(column)) {
                 // 如果检测到碰撞，触发游戏结束   
-                 //this.birdState.isGameOver = true;          
+                 this.birdState.isGameOver = true;          
                 break;
             }
              
