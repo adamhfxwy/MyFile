@@ -346,6 +346,13 @@ ffmpeg -f dshow -i video="@device_pnp_\\?\usb#vid_0bda&pid_9143&mi_00#6&20efe7f1
 启动usb摄像头推送给指定服务器rtsp流
 ffmpeg -f dshow -i video="@device_pnp_\\?\usb#vid_0bda&pid_9143&mi_00#6&20efe7f1&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global" -vcodec libx264 -preset:v ultrafast -tune:v zerolatency -f rtsp rtsp://192.168.1.110:8554/video1
 
+启动usb摄像头推Rtmp的流
+ffmpeg -f dshow -i video="USB Camera" -f flv -vcodec libx264 -vprofile baseline -pix_fmt yuv420p -acodec aac -ar 44100 -b:a 128k -ac 2 -vf scale=640:360 -f flv rtmp://127.0.0.1:1935/live/room
+
+ffmpeg -f dshow -i video="USB Camera" -f flv -vcodec libx264 -preset veryfast -tune zerolatency -b:v 1M -g 30 -acodec aac -ar 44100 -b:a 128k -ac 2 -f flv rtmp://127.0.0.1:1935/live/room
+
+ffmpeg -f dshow -i video="USB Camera" -f flv -vcodec libx264 -preset ultrafast -tune zerolatency -b:v 500k -g 10 -keyint_min 10 -acodec aac -ar 44100 -b:a 128k -ac 1 -f flv rtmp://127.0.0.1:1935/live/room
+
 将本地文件转成rtsp流并推送（无限反复推）
 ffmpeg -re -stream_loop -1 -i E:/Videos/hk1/output/hk1_217.ts -c copy -f flv rtmp://127.0.0.1:1935/live/hk1_217
 
@@ -507,3 +514,5 @@ git branch -m branch_0.1 branch_1.0 将branch_0.1重命名为branch_1.0
 git checkout branch_1.0/master 切换到branch_1.0/master分支
 du -hs
 -------------------------------------------------------------------
+
+cloudflared.exe access rdp --hostname fardesktop.adamhe.sbs --localhost:3389

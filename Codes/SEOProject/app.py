@@ -17,37 +17,39 @@ def setup_driver():
     driver = webdriver.Chrome(options=options)
     return driver
 
-
 # 搜索关键词，获取目标网址的排名
 def search_keyword(driver, keyword, target_url):
-    base_url = "https://www.google.com"
-    driver.get(base_url)
-    search_box = driver.find_element("name", "q")
-    search_box.send_keys(keyword)
-    search_box.send_keys(Keys.RETURN)
+    try:
+        base_url = "https://www.google.com"
+        driver.get(base_url)
+        search_box = driver.find_element("name", "q")
+        search_box.send_keys(keyword)
+        search_box.send_keys(Keys.RETURN)
 
-    time.sleep(2)  # 等待页面加载
+        time.sleep(2)  # 等待页面加载
 
-    for page in range(1, 6):  # 只搜索前5页
-        time.sleep(2)  # 等待结果加载
-        results = driver.find_elements("css selector", 'div.g')
+        for page in range(1, 6):  # 只搜索前5页
+            time.sleep(2)  # 等待结果加载
+            results = driver.find_elements("css selector", 'div.g')
 
-        for index, result in enumerate(results):
+            for index, result in enumerate(results):
+                try:
+                    link = result.find_element("tag name", 'a').get_attribute('href')
+                    if target_url in link:
+                        return page, index + 1
+                except Exception:
+                    continue
+
+            # 查找下一页按钮
             try:
-                link = result.find_element("tag name", 'a').get_attribute('href')
-                if target_url in link:
-                    return page, index + 1
-            except Exception:
-                continue
-
-        # 查找下一页按钮
-        try:
-            next_button = driver.find_element("id", "pnnext")
-            next_button.click()
-        except:
-            break
-    return None, None  # 如果没有找到结果
-
+                next_button = driver.find_element("id", "pnnext")
+                next_button.click()
+            except:
+                break
+        return None, None  # 如果没有找到结果
+    except Exception as e:
+        print(f"Error occurred while searching for keyword '{keyword}': {str(e)}")
+        return None, None  # 返回空值，表示未找到或发生异常
 
 # 读取txt文件中的关键词和目标网址
 def read_keywords_from_file(filename):
@@ -60,7 +62,6 @@ def read_keywords_from_file(filename):
                 keywords.append(line)
     return keywords
 
-
 # 将结果写回到文件中
 def write_results_to_file(filename, keywords, target_url, results):
     with open(filename, 'w') as file:
@@ -70,11 +71,10 @@ def write_results_to_file(filename, keywords, target_url, results):
                 if page is not None and rank is not None:
                     file.write(f"{keyword},@{page}.{rank}\n")
                 else:
-                    file.write(f"{keyword},Not Found\n")
+                    file.write(f"{keyword},Not Found\n")  # 未找到结果或发生异常
             else:
-                file.write(f"{keyword},Not Found\n")
+                file.write(f"{keyword},Not Found\n")  # 未找到结果或发生异常
         file.write(f"\n#目标网址\n{target_url}\n")
-
 
 # Flask 路由，执行主逻辑
 @app.route('/run-seo-script', methods=['POST'])
@@ -99,16 +99,19 @@ def run_seo_script():
 
             results = {}
             for keyword in keywords:
-                print(f"Searching for '{keyword}'...")
-                page, rank = search_keyword(driver, keyword, target_url)
-                results[keyword] = (page, rank)
+                try:
+                    print(f"Searching for '{keyword}'...")
+                    page, rank = search_keyword(driver, keyword, target_url)
+                    results[keyword] = (page, rank)
+                except Exception as e:
+                    print(f"Error processing keyword '{keyword}': {str(e)}")
+                    results[keyword] = (None, None)  # 异常时记录未找到
 
             write_results_to_file(output_file, keywords, target_url, results)
             print(f"Results written to {output_file}")
 
     driver.quit()
     return jsonify({"message": "Script executed successfully."})
-
 
 if __name__ == "__main__":
     app.run(debug=True)
