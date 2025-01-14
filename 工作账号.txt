@@ -92,6 +92,8 @@ password:6535071hfx@
 https://admin1.adamhe.sbs/d3c21844-d957-4126-8ed8-04612f9b34a7
 https://admin3.adamhe.sbs/46339050-754d-447f-a2a5-42208c3bbc0f
 https://admin2.adamhe.sbs/86c50e3a-5b87-49dd-bd20-03c7f2735e40
+https://url.v1.mk/sub?target=clash&url=https%3A%2F%2Fadam3ktest.pages.dev%2Fsub%2Fe7e3fa85-cb6a-407d-989d-742aa877732a%3Fformat%3Dclash&insert=false&emoji=true&list=false&tfo=false&scv=true&fdn=false&sort=false&new_name=true
+https://adam3ktest.pages.dev/sub/e7e3fa85-cb6a-407d-989d-742aa877732a  (shadowrocket)
 
 laya视频
 https://space.bilibili.com/1736809941
