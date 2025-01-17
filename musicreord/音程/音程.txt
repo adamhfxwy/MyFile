@@ -1,0 +1,19 @@
+三度
+c e g b d f a c
+ce df eg fa gb ac bd
+
+四度
+c f b e a d g c
+cf dg ea fb gc ad be 
+
+五度
+c g d a e b f c
+cg da eb fc gd ae bf
+
+六度
+c a f d b g e c
+ca db ec fd ge af bg
+
+七度
+c b a g f e d c
+cb dc ed fe gf ag ba
